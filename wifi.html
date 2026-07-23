@@ -508,12 +508,8 @@
         </div>
         <div class="qr-frame" id="qrFrame"></div>
         <div class="field-row">
-          <span class="field-label">Network</span>
+          <span class="field-label">Network ID</span>
           <span class="field-value" id="outSsid">—</span>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Password</span>
-          <span class="field-value" id="outPass">—</span>
         </div>
         <div class="tag-footer">
           <span class="accent-dot"></span>Scan to connect automatically
@@ -563,7 +559,6 @@
   const tagKicker = document.getElementById('tagKicker');
   const tagCard = document.getElementById('tagCard');
   const outSsid = document.getElementById('outSsid');
-  const outPass = document.getElementById('outPass');
   const qrFrame = document.getElementById('qrFrame');
 
   // Modal elements
@@ -607,9 +602,6 @@
     const venue = venueInput.value.trim();
     tagVenue.textContent = venue || 'Our WiFi';
     outSsid.textContent = ssidInput.value.trim() || '—';
-    outPass.textContent = securitySelect.value === 'nopass'
-      ? 'Open network'
-      : (passInput.value.trim() || '—');
     renderQR();
   }
 
