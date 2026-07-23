@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -18,7 +18,6 @@
     --amber:#E8A33D;
     --teal:#2F6F6B;
     --muted:#8C8478;
-    --danger:#B5482E;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -76,7 +75,7 @@
     color:#B9B3A6;
     margin-bottom:8px;
   }
-  input[type="text"], input[type="number"], select{
+  input[type="text"], select{
     width:100%;
     background:var(--charcoal-2);
     border:1px solid #3B3B41;
@@ -87,16 +86,8 @@
     font-size:14px;
     transition:border-color .15s ease;
   }
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button{
-    -webkit-appearance:none;
-    margin:0;
-  }
-  input[type="number"]{
-    -moz-appearance:textfield;
-  }
   select{font-family:'Inter',sans-serif;}
-  input[type="text"]:focus, input[type="number"]:focus, select:focus{
+  input[type="text"]:focus, select:focus{
     outline:none;
     border-color:var(--amber);
   }
@@ -123,6 +114,22 @@
     color:var(--muted);
     margin-top:8px;
     line-height:1.5;
+  }
+
+  .note-box{
+    background:var(--charcoal-2);
+    border:1px solid #3B3B41;
+    border-left:3px solid var(--amber);
+    border-radius:8px;
+    padding:12px 14px;
+  }
+  .note-text{
+    margin:0;
+    font-size:14px;
+    color:#F6F1E7;
+  }
+  .note-text strong{
+    color:var(--amber);
   }
 
   .actions{
@@ -248,11 +255,6 @@
   .qr-frame svg, .qr-frame img, .qr-frame canvas{
     display:block;
   }
-  .tick{
-    position:absolute;
-    inset:-8px;
-    pointer-events:none;
-  }
   .field-row{
     display:flex;
     justify-content:space-between;
@@ -342,14 +344,8 @@
     animation:slideUp 0.4s ease-out;
   }
   @keyframes slideUp{
-    from{
-      transform:translateY(30px);
-      opacity:0;
-    }
-    to{
-      transform:translateY(0);
-      opacity:1;
-    }
+    from{ transform:translateY(30px); opacity:0; }
+    to{ transform:translateY(0); opacity:1; }
   }
   .success-icon{
     width:80px;
@@ -366,17 +362,9 @@
     animation:popIn 0.5s ease-out;
   }
   @keyframes popIn{
-    0%{
-      transform:scale(0);
-      opacity:0;
-    }
-    50%{
-      transform:scale(1.1);
-    }
-    100%{
-      transform:scale(1);
-      opacity:1;
-    }
+    0%{ transform:scale(0); opacity:0; }
+    50%{ transform:scale(1.1); }
+    100%{ transform:scale(1); opacity:1; }
   }
   .modal-title{
     font-family:'Fraunces',serif;
@@ -454,9 +442,11 @@
     </div>
 
     <div class="field">
-      <label for="maxDevices">Max devices that can connect</label>
-      <input type="number" id="maxDevices" placeholder="e.g. 10" min="1" max="500" value="10">
-      <p class="hint">Maximum number of devices that can simultaneously connect to this network.</p>
+      <label>Note</label>
+      <div class="note-box">
+        <p class="note-text">Max devices: <strong>10</strong></p>
+        <p class="hint" style="margin-top:4px;">This is just a courtesy note printed on the card — a QR code can't actually cap how many devices join. To truly limit connections, set a client limit or MAC allow-list in your router's admin settings.</p>
+      </div>
     </div>
 
     <div class="field">
@@ -495,16 +485,16 @@
         </div>
         <div class="qr-frame" id="qrFrame"></div>
         <div class="field-row">
-          <span class="field-label">Network ID</span>
+          <span class="field-label">Network</span>
           <span class="field-value" id="outSsid">—</span>
         </div>
         <div class="field-row">
-          <span class="field-label">Max Devices</span>
-          <span class="field-value" id="outDevices">—</span>
+          <span class="field-label">Password</span>
+          <span class="field-value" id="outPass">—</span>
         </div>
         <div class="tag-footer">
           <span class="accent-dot"></span>Scan to connect automatically
-        </div>
+          <br>Please keep to 10 connected devices</div>
       </div>
     </div>
   </div>
@@ -528,7 +518,6 @@
   const ssidInput = document.getElementById('ssid');
   const passInput = document.getElementById('password');
   const securitySelect = document.getElementById('security');
-  const maxDevicesInput = document.getElementById('maxDevices');
   const cardStyleSelect = document.getElementById('cardStyle');
   const pwToggle = document.getElementById('pwToggle');
 
@@ -536,7 +525,7 @@
   const tagKicker = document.getElementById('tagKicker');
   const tagCard = document.getElementById('tagCard');
   const outSsid = document.getElementById('outSsid');
-  const outDevices = document.getElementById('outDevices');
+  const outPass = document.getElementById('outPass');
   const qrFrame = document.getElementById('qrFrame');
 
   // Modal elements
@@ -544,7 +533,6 @@
   const modalCloseBtn = document.getElementById('modalCloseBtn');
 
   let qr = null;
-  let currentStyle = 'Home';
   let pendingAction = null;
 
   function escapeWifi(str){
@@ -577,11 +565,13 @@
     const venue = venueInput.value.trim();
     tagVenue.textContent = venue || 'Our WiFi';
     outSsid.textContent = ssidInput.value.trim() || '—';
-    outDevices.textContent = maxDevicesInput.value || '—';
+    outPass.textContent = securitySelect.value === 'nopass'
+      ? 'Open network'
+      : (passInput.value.trim() || '—');
     renderQR();
   }
 
-  [venueInput, ssidInput, passInput, securitySelect, maxDevicesInput].forEach(el=>{
+  [venueInput, ssidInput, passInput, securitySelect].forEach(el=>{
     el.addEventListener('input', render);
     el.addEventListener('change', render);
   });
@@ -597,34 +587,26 @@
     const option = e.target.options[e.target.selectedIndex];
     const accent = option.dataset.accent;
     const kicker = option.dataset.kicker;
-    
+
     tagCard.style.setProperty('--accent', accent);
-    tagKicker.textContent = venueInput.value.trim() ? tagKicker.textContent : kicker;
-    tagKicker.dataset.default = kicker;
     if(!venueInput.value.trim()){
       tagKicker.textContent = kicker;
     }
-    currentStyle = option.textContent.trim();
+    tagKicker.dataset.default = kicker;
   });
 
   function showSuccessModal(action){
-    // Store the pending action
     pendingAction = action;
-    
-    // Show modal with animation
     successModal.classList.add('show');
   }
 
   function closeSuccessModal(){
     successModal.classList.remove('show');
-    
-    // Execute pending action after modal closes
     if(pendingAction === 'download'){
       performDownload();
     } else if(pendingAction === 'print'){
       window.print();
     }
-    
     pendingAction = null;
   }
 
@@ -657,7 +639,6 @@
 
   modalCloseBtn.addEventListener('click', closeSuccessModal);
 
-  // Close modal when clicking outside
   successModal.addEventListener('click', (e)=>{
     if(e.target === successModal){
       closeSuccessModal();
