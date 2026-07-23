@@ -459,15 +459,6 @@
     background:#F3C374;
     transform:translateY(-2px);
   }
-  .modal-secondary-btn{
-    background:transparent;
-    color:#F6F1E7;
-    border:1px solid #3B3B41;
-  }
-  .modal-secondary-btn:hover{
-    border-color:var(--amber);
-    color:var(--amber);
-  }
 </style>
 </head>
 <body>
@@ -576,7 +567,7 @@
     </div>
 
     <div class="modal-actions">
-      <button class="modal-close-btn" id="modalCloseBtn">Done</button>
+      <button class="modal-close-btn" id="modalCloseBtn">Got it!</button>
     </div>
   </div>
 </div>
@@ -604,6 +595,7 @@
 
   let qr = null;
   let currentStyle = 'Home';
+  let pendingAction = null;
 
   function escapeWifi(str){
     return str.replace(/([\\;,:"])/g, '\\$1');
@@ -641,11 +633,14 @@
     renderQR();
   }
 
-  function showSuccessModal(){
+  function showSuccessModal(action){
     // Update modal with current data
     modalSsid.textContent = ssidInput.value.trim() || 'Not set';
     modalVenue.textContent = venueInput.value.trim() || 'Our WiFi';
     modalStyle.textContent = currentStyle;
+    
+    // Store the pending action
+    pendingAction = action;
     
     // Show modal with animation
     successModal.classList.add('show');
@@ -653,6 +648,26 @@
 
   function closeSuccessModal(){
     successModal.classList.remove('show');
+    
+    // Execute pending action after modal closes
+    if(pendingAction === 'download'){
+      performDownload();
+    } else if(pendingAction === 'print'){
+      window.print();
+    }
+    
+    pendingAction = null;
+  }
+
+  function performDownload(){
+    const wrap = document.getElementById('tagWrap');
+    html2canvas(wrap, {backgroundColor:null, scale:3}).then(canvas=>{
+      const link = document.createElement('a');
+      const name = (ssidInput.value.trim() || 'wifi-card').replace(/[^a-z0-9\-_]+/gi,'_');
+      link.download = `${name}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
   }
 
   [venueInput, ssidInput, passInput, securitySelect].forEach(el=>{
@@ -681,15 +696,11 @@
   });
 
   document.getElementById('printBtn').addEventListener('click', ()=>{
-    if(ssidInput.value.trim()){
-      showSuccessModal();
-      setTimeout(()=>{
-        closeSuccessModal();
-        window.print();
-      }, 1500);
-    } else {
+    if(!ssidInput.value.trim()){
       alert('Please enter a network name (SSID) first!');
+      return;
     }
+    showSuccessModal('print');
   });
 
   document.getElementById('downloadBtn').addEventListener('click', ()=>{
@@ -697,22 +708,7 @@
       alert('Please enter a network name (SSID) first!');
       return;
     }
-    
-    // Show success modal FIRST
-    showSuccessModal();
-    
-    // Then proceed with download after a brief delay
-    setTimeout(()=>{
-      const wrap = document.getElementById('tagWrap');
-      html2canvas(wrap, {backgroundColor:null, scale:3}).then(canvas=>{
-        const link = document.createElement('a');
-        const name = (ssidInput.value.trim() || 'wifi-card').replace(/[^a-z0-9\-_]+/gi,'_');
-        link.download = `${name}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      });
-      closeSuccessModal();
-    }, 15000);
+    showSuccessModal('download');
   });
 
   modalCloseBtn.addEventListener('click', closeSuccessModal);
